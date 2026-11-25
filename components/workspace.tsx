@@ -13,6 +13,23 @@ type Section = "resumen" | "ventas" | "gastos" | "caja-y-bancos" | "inventario" 
 type Transaction = { id:string; transaction_type:"income"|"expense"; category:string; description:string; amount:number|string; transaction_date:string; payment_method?:string|null; notes?:string|null };
 type Product = { id:string; name:string; sku?:string|null; unit:string; sale_price:number|string; cost_price:number|string; stock_quantity:number|string; minimum_stock:number|string };
 type Contact = { id:string; name:string; contact_type:string; email?:string|null; phone?:string|null; document_number?:string|null };
+type Organization = { id: string; name: string };
+type OrganizationMembership = { organization: Organization | Organization[] | null };
+type SavePayload = {
+ organization_id: string;
+ transaction_type?: "income" | "expense";
+ category?: string;
+ description?: string;
+ amount?: number;
+ notes?: string | null;
+ name?: string;
+ sale_price?: number;
+ cost_price?: number;
+ stock_quantity?: number;
+ contact_type?: "customer" | "supplier";
+ phone?: string | null;
+ email?: string | null;
+};
 type OrganizationMembership = { organization: { id:string; name:string } | { id:string; name:string }[] | null };
 const money=(n:number)=>new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(n);
 const navGroups=[
