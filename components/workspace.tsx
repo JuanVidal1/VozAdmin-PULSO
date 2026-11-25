@@ -30,7 +30,6 @@ type SavePayload = {
  phone?: string | null;
  email?: string | null;
 };
-type OrganizationMembership = { organization: { id:string; name:string } | { id:string; name:string }[] | null };
 const money=(n:number)=>new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(n);
 const navGroups=[
  {title:"Principal",items:[{label:"Resumen",href:"/resumen",key:"resumen" as Section,icon:LayoutDashboard},{label:"Ventas",href:"/ventas",key:"ventas" as Section,icon:ShoppingBag},{label:"Gastos",href:"/gastos",key:"gastos" as Section,icon:ArrowDownLeft},{label:"Caja y bancos",href:"/caja-y-bancos",key:"caja-y-bancos" as Section,icon:Wallet}]},
