@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity, ArrowDownLeft, ArrowUpRight, Bell, Boxes, BriefcaseBusiness,
-  CalendarDays, Check, ChevronDown, CircleDollarSign, ClipboardList,
+  CalendarDays, Check, ChevronDown, ClipboardList,
   FileText, LayoutDashboard, Menu, Package, Plus, Search, Settings,
   ShoppingBag, Sparkles, TrendingUp, Users, Wallet, X
 } from "lucide-react";
@@ -13,6 +13,7 @@ type Section = "resumen" | "ventas" | "gastos" | "caja-y-bancos" | "inventario" 
 type Transaction = { id:string; transaction_type:"income"|"expense"; category:string; description:string; amount:number|string; transaction_date:string; payment_method?:string|null; notes?:string|null };
 type Product = { id:string; name:string; sku?:string|null; unit:string; sale_price:number|string; cost_price:number|string; stock_quantity:number|string; minimum_stock:number|string };
 type Contact = { id:string; name:string; contact_type:string; email?:string|null; phone?:string|null; document_number?:string|null };
+type OrganizationMembership = { organization: { id:string; name:string } | { id:string; name:string }[] | null };
 const money=(n:number)=>new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(n);
 const navGroups=[
  {title:"Principal",items:[{label:"Resumen",href:"/resumen",key:"resumen" as Section,icon:LayoutDashboard},{label:"Ventas",href:"/ventas",key:"ventas" as Section,icon:ShoppingBag},{label:"Gastos",href:"/gastos",key:"gastos" as Section,icon:ArrowDownLeft},{label:"Caja y bancos",href:"/caja-y-bancos",key:"caja-y-bancos" as Section,icon:Wallet}]},
@@ -38,7 +39,7 @@ export default function Workspace({section}:{section:Section}) {
  const [pulsoMessage,setPulsoMessage]=useState("");
  const notify=(message:string)=>setToast(message);
  useEffect(()=>{if(!toast)return;const timer=window.setTimeout(()=>setToast(""),3000);return()=>window.clearTimeout(timer)},[toast]);
- useEffect(()=>{let live=true;(async()=>{try{const r=await fetch("/api/organizations",{cache:"no-store"});const j=await r.json();if(!r.ok)throw new Error(j.error||"No se pudieron cargar las empresas.");const list=(j.data??[]).map((m:any)=>Array.isArray(m.organization)?m.organization[0]:m.organization).filter(Boolean);if(live){setOrganizations(list);if(list[0])setOrganizationId(list[0].id);else setLoading(false)}}catch(e){if(live){setError(e instanceof Error?e.message:"Error al cargar el espacio.");setLoading(false)}}})();return()=>{live=false}},[]);
+ useEffect(()=>{let live=true;(async()=>{try{const r=await fetch("/api/organizations",{cache:"no-store"});const j=await r.json();if(!r.ok)throw new Error(j.error||"No se pudieron cargar las empresas.");const list=(j.data??[]).map((m:OrganizationMembership)=>Array.isArray(m.organization)?m.organization[0]:m.organization).filter(Boolean);if(live){setOrganizations(list);if(list[0])setOrganizationId(list[0].id);else setLoading(false)}}catch(e){if(live){setError(e instanceof Error?e.message:"Error al cargar el espacio.");setLoading(false)}}})();return()=>{live=false}},[]);
  useEffect(()=>{if(!organizationId)return;let live=true;setLoading(true);setError("");Promise.all([
  fetch("/api/transactions?organization_id="+organizationId,{cache:"no-store"}).then(r=>r.json()),
  fetch("/api/products?organization_id="+organizationId,{cache:"no-store"}).then(r=>r.json()),
@@ -52,7 +53,7 @@ export default function Workspace({section}:{section:Section}) {
  async function save(){
   if(!organizationId){notify("Primero crea o selecciona una empresa.");return}
   try{
-   let endpoint="",body:any={organization_id:organizationId};
+   let endpoint="";let body:Record<string,unknown>={organization_id:organizationId};
    if(modal==="transaction"){const amount=Number(form.amount.replace(/[^0-9]/g,""));if(!form.name.trim()||amount<=0)throw new Error("Completa el concepto y un valor mayor que cero.");endpoint="/api/transactions";body={...body,transaction_type:section==="gastos"||section==="compras"?"expense":form.kind as "income"|"expense",category:section==="compras"?"compra":section==="ventas"?"venta":section==="gastos"?"gasto":"general",description:form.name.trim(),amount,notes:form.detail.trim()||null}}
    if(modal==="product"){const price=Number(form.price||0),cost=Number(form.cost||0),stock=Number(form.stock||0);if(!form.name.trim())throw new Error("Escribe el nombre del producto.");endpoint="/api/products";body={...body,name:form.name.trim(),sale_price:price,cost_price:cost,stock_quantity:stock,description:form.detail.trim()||null}}
    if(modal==="contact"){if(!form.name.trim())throw new Error("Escribe el nombre del contacto.");endpoint="/api/contacts";body={...body,name:form.name.trim(),contact_type:section==="proveedores"?"supplier":"customer",phone:form.phone.trim()||null,email:form.email.trim()||null}}
