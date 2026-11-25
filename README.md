@@ -81,3 +81,20 @@ No se debe ejecutar `npm audit fix --force` sin revisar antes el árbol de depen
 4. La IA interpreta y propone; el backend valida permisos y reglas antes de ejecutar.
 5. Las operaciones sensibles requieren confirmación explícita y dejan auditoría.
 6. No se declara una integración lista hasta que esté conectada y probada de extremo a extremo.
+
+## Desarrollo conectado (migración 0003)
+
+Después de las migraciones 0001 y 0002, ejecuta también `supabase/migrations/0003_security_and_atomic_transactions.sql` en Supabase → SQL Editor.
+
+La migración 0003 establece permisos de lectura para todos los miembros, separa permisos de escritura por rol, mantiene los movimientos financieros como registros append-only y crea `create_transaction_with_audit` para guardar cada movimiento junto con su auditoría en una sola transacción PostgreSQL.
+
+## API operativa disponible
+
+| Ruta | Métodos | Función |
+|---|---|---|
+| `/api/organizations` | GET, POST | Consultar y crear empresas del usuario autenticado |
+| `/api/transactions` | GET, POST | Consultar y registrar movimientos financieros persistidos |
+| `/api/contacts` | GET, POST | Consultar y crear clientes/proveedores |
+| `/api/products` | GET, POST | Consultar y crear productos |
+
+El panel principal consulta la empresa y sus movimientos reales desde estas rutas. Las integraciones de IA, voz e imágenes de PULSO y los flujos completos de ventas, compras, inventario, cartera, informes, automatizaciones y pagos siguen pendientes de implementación y pruebas de extremo a extremo.
