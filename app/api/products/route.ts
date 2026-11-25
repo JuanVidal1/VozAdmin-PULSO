@@ -63,18 +63,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Los datos del producto no son válidos." }, { status: 422 });
   }
 
-  const { data, error } = await supabase.from("products").insert({
-    organization_id: body.organization_id,
-    sku: body.sku?.trim() || null,
-    name,
-    description: body.description?.trim() || null,
-    unit: body.unit?.trim() || "unidad",
-    sale_price: salePrice,
-    cost_price: costPrice,
-    stock_quantity: stock,
-    minimum_stock: minimumStock
-  }).select("id, organization_id, sku, name, unit, sale_price, cost_price, stock_quantity, minimum_stock, is_active, created_at").single();
+  const { data, error } = await supabase.rpc("create_product_with_opening_stock", {
+    p_organization_id: body.organization_id,
+    p_sku: body.sku?.trim() || null,
+    p_name: name,
+    p_description: body.description?.trim() || null,
+    p_unit: body.unit?.trim() || "unidad",
+    p_sale_price: salePrice,
+    p_cost_price: costPrice,
+    p_stock_quantity: stock,
+    p_minimum_stock: minimumStock
+  });
 
-  if (error) return NextResponse.json({ error: "No fue posible guardar el producto. Verifica tus permisos." }, { status: 403 });
+  if (error) {
+    const forbidden = error.code === "42501";
+    return NextResponse.json(
+      { error: forbidden ? "No tienes permisos para administrar el inventario de esta empresa." : "No fue posible guardar el producto." },
+      { status: forbidden ? 403 : 400 }
+    );
+  }
   return NextResponse.json({ data }, { status: 201 });
 }
