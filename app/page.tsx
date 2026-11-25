@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, ArrowDownLeft, ArrowUpRight, Bell, Boxes, BriefcaseBusiness, CalendarDays, Check, ChevronDown, CircleDollarSign, ClipboardList, Clock3, Command, CreditCard, FileText, Headphones, LayoutDashboard, Menu, Mic, Package, Plus, Search, Send, Settings, ShoppingBag, Sparkles, TrendingUp, Users, Wallet, X } from "lucide-react";
 
 type Entry = { id: string; name: string; detail: string; amount: number; kind: "Ingreso" | "Gasto"; date: string };
@@ -16,6 +16,7 @@ export default function Home() {
   const [active, setActive] = useState("Resumen");
   const [entries, setEntries] = useState(initialEntries);
   const [organizationId, setOrganizationId] = useState("");
+  const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([]);
   const [organizationName, setOrganizationName] = useState("Cargando empresa...");
   const [loadingData, setLoadingData] = useState(true);
   const [modal, setModal] = useState<"Ingreso" | "Gasto" | "Venta" | null>(null);
@@ -30,7 +31,7 @@ export default function Home() {
   const totals = useMemo(() => entries.reduce((acc, item) => { acc[item.kind] += item.amount; return acc; }, { Ingreso: 0, Gasto: 0 }), [entries]);
   const balance = totals.Ingreso - totals.Gasto;
   const filtered = entries.filter(item => (item.name + item.detail).toLowerCase().includes(search.toLowerCase()));
-  const notify = (text: string) => { setToast(text); window.setTimeout(() => setToast(""), 2600); };
+  const notify = useCallback((text: string) => { setToast(text); window.setTimeout(() => setToast(""), 2600); }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,27 +39,48 @@ export default function Home() {
       try {
         const response = await fetch("/api/organizations", { cache: "no-store" });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "No fue posible cargar tu empresa.");
-        const membership = result.data?.[0];
-        const organization = Array.isArray(membership?.organization)
-          ? membership.organization[0]
-          : membership?.organization;
-        if (!organization?.id) {
-          if (!cancelled) {
-            setOrganizationName("Sin empresa");
-            setEntries([]);
-            notify("Tu cuenta aún no tiene una empresa. Completa el registro del negocio.");
-          }
+        if (!response.ok) throw new Error(result.error || "No fue posible cargar tus empresas.");
+        const available = (result.data ?? []).map((membership: { organization: unknown }) => {
+          const organization = Array.isArray(membership.organization)
+            ? membership.organization[0]
+            : membership.organization;
+          return organization as { id: string; name: string } | null;
+        }).filter((organization: { id: string; name: string } | null): organization is { id: string; name: string } => Boolean(organization?.id));
+        if (cancelled) return;
+        setOrganizations(available);
+        if (available.length === 0) {
+          setOrganizationName("Sin empresa");
+          setEntries([]);
+          notify("Tu cuenta aún no tiene una empresa. Completa el registro del negocio.");
+          setLoadingData(false);
           return;
         }
-        if (cancelled) return;
-        setOrganizationId(organization.id);
-        setOrganizationName(organization.name);
-        const transactionsResponse = await fetch(`/api/transactions?organization_id=${organization.id}`, { cache: "no-store" });
-        const transactionsResult = await transactionsResponse.json();
-        if (!transactionsResponse.ok) throw new Error(transactionsResult.error || "No fue posible cargar los movimientos.");
+        setOrganizationId(available[0].id);
+        setOrganizationName(available[0].name);
+      } catch (error) {
         if (!cancelled) {
-          setEntries((transactionsResult.data ?? []).map((item: {
+          setOrganizationName("No disponible");
+          notify(error instanceof Error ? error.message : "Error al cargar tus empresas.");
+          setLoadingData(false);
+        }
+      }
+    }
+    loadWorkspace();
+    return () => { cancelled = true; };
+  }, [notify]);
+
+  useEffect(() => {
+    if (!organizationId) return;
+    let cancelled = false;
+    setLoadingData(true);
+    setEntries([]);
+    async function loadTransactions() {
+      try {
+        const response = await fetch(`/api/transactions?organization_id=${organizationId}`, { cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "No fue posible cargar los movimientos.");
+        if (!cancelled) {
+          setEntries((result.data ?? []).map((item: {
             id: string; description: string; category: string; amount: number | string;
             transaction_type: "income" | "expense"; transaction_date: string; payment_method: string | null;
           }) => ({
@@ -71,14 +93,14 @@ export default function Home() {
           })));
         }
       } catch (error) {
-        if (!cancelled) notify(error instanceof Error ? error.message : "Error al cargar los datos.");
+        if (!cancelled) notify(error instanceof Error ? error.message : "Error al cargar los movimientos.");
       } finally {
         if (!cancelled) setLoadingData(false);
       }
     }
-    loadWorkspace();
+    loadTransactions();
     return () => { cancelled = true; };
-  }, []);
+  }, [organizationId, notify]);
 
   const openEntry = (kind: "Ingreso" | "Gasto" | "Venta") => { setName(""); setAmount(""); setDetail(""); setModal(kind); };
   const saveEntry = async () => {
@@ -125,7 +147,7 @@ export default function Home() {
   return <div className="app-shell">
     <aside className={`sidebar ${mobileNav ? "open" : ""}`}>
       <div className="brand"><div className="brand-mark">V.</div><div className="brand-name">voz<span>admin</span></div></div>
-      <div className="workspace"><div className="workspace-avatar">N</div><div><small>ESPACIO DE TRABAJO</small><strong>{organizationName}</strong></div><ChevronDown size={14} style={{marginLeft:"auto",color:"#a9b7b0"}}/></div>
+      <div className="workspace"><div className="workspace-avatar">N</div><div style={{minWidth:0,flex:1}}><small>EMPRESA ACTIVA</small><select aria-label="Cambiar empresa" value={organizationId} onChange={event => { const selected = organizations.find(item => item.id === event.target.value); setOrganizationId(event.target.value); if (selected) setOrganizationName(selected.name); }} style={{display:"block",width:"100%",maxWidth:170,background:"transparent",border:0,color:"#fff",fontWeight:600,outline:"none",fontSize:12}}>{organizations.map(item => <option key={item.id} value={item.id} style={{color:"#17251f"}}>{item.name}</option>)}</select></div><ChevronDown size={14} style={{marginLeft:"auto",color:"#a9b7b0"}}/></div>
       {navGroups.map(group => <div key={group.title}><p className="nav-label">{group.title}</p><div className="nav-list">{group.items.map(item => <button key={item.label} className={`nav-item ${active === item.label ? "active" : ""}`} onClick={() => {setActive(item.label);setMobileNav(false);}}><item.icon/><span>{item.label}</span></button>)}</div></div>)}
       <div className="nav-spacer"/><div className="sidebar-bottom"><div className="user-card"><div className="user-avatar">JV</div><div><strong>Administrador</strong><small>Espacio empresarial</small></div><Settings size={15} style={{marginLeft:"auto",color:"#9baaa2"}}/></div></div>
     </aside>
@@ -133,10 +155,10 @@ export default function Home() {
       <header className="topbar"><div style={{display:"flex",alignItems:"center",gap:12}}><button className="icon-btn mobile-menu" onClick={()=>setMobileNav(!mobileNav)} aria-label="Abrir menú"><Menu/></button><div className="breadcrumb">Espacio de trabajo <span style={{margin:"0 7px"}}>/</span> <b>{active}</b></div></div><div className="top-actions"><div className="date-chip"><CalendarDays size={13} style={{display:"inline",verticalAlign:"-2px",marginRight:7}}/>{new Date().toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" })}</div><button className="icon-btn" aria-label="Buscar" onClick={()=>document.getElementById("movement-search")?.focus()}><Search/></button><button className="icon-btn" aria-label="Notificaciones" onClick={()=>notify("No tienes notificaciones nuevas.")}><Bell/><i className="dot"/></button></div></header>
       <section className="heading-row"><div><p className="eyebrow">PANEL DE CONTROL · COLOMBIA</p><h1 className="page-title">{heading}</h1><p className="subtitle">{loadingData ? "Cargando la información de tu empresa..." : "Hola. Aquí tienes el pulso de tu operación."}</p></div><button className="primary-btn" onClick={()=>openEntry("Venta")}><Plus size={16}/> Registrar movimiento</button></section>
       <section className="stats-grid">
-        <article className="stat-card"><div className="stat-top"><span>Ingresos registrados</span><span className="stat-icon"><ArrowUpRight/></span></div><div className="stat-value">{money(totals.Ingreso)}</div><div className="stat-foot"><span className="positive">↑ Datos reales</span> · Empresa activa</div></article>
-        <article className="stat-card"><div className="stat-top"><span>Gastos registrados</span><span className="stat-icon" style={{background:"#fff2e9",color:"#c47b3e"}}><ArrowDownLeft/></span></div><div className="stat-value">{money(totals.Gasto)}</div><div className="stat-foot">Movimientos guardados en tu empresa</div></article>
-        <article className="stat-card"><div className="stat-top"><span>Flujo neto</span><span className="stat-icon" style={{background:"#f1f0fb",color:"#7566a8"}}><TrendingUp/></span></div><div className="stat-value">{money(balance)}</div><div className="stat-foot">Ingresos menos gastos registrados</div></article>
-        <article className="stat-card"><div className="stat-top"><span>Movimientos</span><span className="stat-icon" style={{background:"#fff4e7",color:"#b47c36"}}><ClipboardList/></span></div><div className="stat-value">{entries.length}</div><div className="stat-foot">Registros almacenados</div></article>
+        <article className="stat-card"><div className="stat-top"><span>Ingresos recientes</span><span className="stat-icon"><ArrowUpRight/></span></div><div className="stat-value">{money(totals.Ingreso)}</div><div className="stat-foot"><span className="positive">↑ Datos reales</span> · Últimos 100 movimientos</div></article>
+        <article className="stat-card"><div className="stat-top"><span>Gastos recientes</span><span className="stat-icon" style={{background:"#fff2e9",color:"#c47b3e"}}><ArrowDownLeft/></span></div><div className="stat-value">{money(totals.Gasto)}</div><div className="stat-foot">Movimientos guardados en tu empresa</div></article>
+        <article className="stat-card"><div className="stat-top"><span>Flujo neto reciente</span><span className="stat-icon" style={{background:"#f1f0fb",color:"#7566a8"}}><TrendingUp/></span></div><div className="stat-value">{money(balance)}</div><div className="stat-foot">Ingresos menos gastos registrados</div></article>
+        <article className="stat-card"><div className="stat-top"><span>Movimientos</span><span className="stat-icon" style={{background:"#fff4e7",color:"#b47c36"}}><ClipboardList/></span></div><div className="stat-value">{entries.length}</div><div className="stat-foot">Hasta 100 movimientos recientes</div></article>
       </section>
       <section className="dashboard-grid">
         <article className="panel"><div className="panel-head"><div><h2 className="panel-title">Actividad del negocio</h2><div className="panel-note">Vista ilustrativa · Conecta tus datos para ver tendencias reales</div></div><select className="period-select" aria-label="Periodo"><option>Últimos 7 días</option><option>Este mes</option></select></div><div className="chart-wrap"><div className="chart-grid"><i className="grid-line"/><i className="grid-line"/><i className="grid-line"/><i className="grid-line"/></div><svg className="chart-svg" viewBox="0 0 600 150" preserveAspectRatio="none" role="img" aria-label="Gráfico ilustrativo de actividad"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#78ad91" stopOpacity=".25"/><stop offset="100%" stopColor="#78ad91" stopOpacity="0"/></linearGradient></defs><path d="M0 115 C35 108 48 85 82 94 S135 118 170 82 S225 89 260 62 S315 83 345 55 S400 76 430 42 S485 64 520 28 S565 43 600 12 L600 150 L0 150Z" fill="url(#area)"/><path d="M0 115 C35 108 48 85 82 94 S135 118 170 82 S225 89 260 62 S315 83 345 55 S400 76 430 42 S485 64 520 28 S565 43 600 12" fill="none" stroke="#367b62" strokeWidth="3" vectorEffect="non-scaling-stroke" strokeLinecap="round"/><path d="M0 132 C40 128 58 119 82 123 S135 130 170 113 S225 121 260 108 S315 115 345 100 S400 111 430 96 S485 104 520 84 S565 91 600 78" fill="none" stroke="#c7d89a" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinecap="round"/></svg><div className="chart-labels"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div></div><div className="legend"><span><i/>Ingresos</span><span><i/>Gastos</span></div></article>
