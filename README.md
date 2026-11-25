@@ -98,3 +98,7 @@ La migración 0003 establece permisos de lectura para todos los miembros, separa
 | `/api/products` | GET, POST | Consultar y crear productos |
 
 El panel principal consulta la empresa y sus movimientos reales desde estas rutas. Las integraciones de IA, voz e imágenes de PULSO y los flujos completos de ventas, compras, inventario, cartera, informes, automatizaciones y pagos siguen pendientes de implementación y pruebas de extremo a extremo.
+
+### Integridad referencial multiempresa (migración 0004)
+
+Ejecuta también `supabase/migrations/0004_tenant_integrity.sql` después de 0003. Añade claves foráneas compuestas para impedir que ventas, compras, inventario y cartera relacionen registros de empresas distintas; incorpora triggers uniformes para `updated_at`. Las restricciones nuevas se crean inicialmente como `NOT VALID`: protegen las escrituras nuevas y permiten auditar datos históricos antes de validar todo el conjunto.
