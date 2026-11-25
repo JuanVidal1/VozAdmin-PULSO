@@ -42,10 +42,10 @@ export default function CustomersPage() {
         if (active) {
           setOrganizations(available);
           if (available[0]) setOrganizationId(available[0].id);
-          else setError("Esta cuenta aún no tiene una empresa registrada.");
+          else { setError("Esta cuenta aún no tiene una empresa registrada."); setLoading(false); }
         }
       } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : "Error al cargar empresas.");
+        if (active) { setError(err instanceof Error ? err.message : "Error al cargar empresas."); setLoading(false); }
       }
     }
     loadOrganizations();
@@ -56,6 +56,7 @@ export default function CustomersPage() {
     if (!organizationId) return;
     let active = true;
     setLoading(true);
+    setContacts([]);
     async function loadContacts() {
       try {
         const response = await fetch(`/api/contacts?organization_id=${organizationId}`, { cache: "no-store" });
