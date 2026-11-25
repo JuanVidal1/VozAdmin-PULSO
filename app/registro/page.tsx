@@ -27,15 +27,10 @@ export default function RegisterPage() {
       });
       if (signUpError) throw signUpError;
       if (data.session) {
-        const { error: organizationError } = await supabase.from("organizations").insert({
-          name: businessName,
-          created_by: data.user?.id
-        });
-        if (organizationError) throw organizationError;
         router.push("/");
         router.refresh();
       } else {
-        setNotice("Cuenta creada. Revisa tu correo para confirmar el registro; después inicia sesión y termina de crear tu empresa.");
+        setNotice("Cuenta creada. Revisa tu correo para confirmar el registro. Tu espacio de negocio se prepara automáticamente; después inicia sesión.");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible crear la cuenta.");
