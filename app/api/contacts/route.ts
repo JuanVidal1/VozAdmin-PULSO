@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     phone: body.phone?.trim() || null,
     address: body.address?.trim() || null,
     notes: body.notes?.trim() || null
-  }).select("id, organization_id, contact_type, name, email, phone, created_at").single();
+  }).select("id, organization_id, contact_type, name, document_number, email, phone, address, created_at").single();
 
   if (error) return NextResponse.json({ error: "No fue posible guardar el contacto. Verifica tus permisos." }, { status: 403 });
   return NextResponse.json({ data }, { status: 201 });
