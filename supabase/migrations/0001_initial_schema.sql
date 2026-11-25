@@ -59,7 +59,7 @@ as $$
       and m.user_id = (select auth.uid())
       and m.role in ('owner','admin')
   );
-$;
+$$;
 
 create or replace function public.add_organization_owner()
 returns trigger
