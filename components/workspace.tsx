@@ -19,7 +19,7 @@ type SavePayload = {
  organization_id: string;
  transaction_type?: "income" | "expense";
  category?: string;
- description?: string;
+ description?: string | null;
  amount?: number;
  notes?: string | null;
  name?: string;
