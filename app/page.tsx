@@ -17,7 +17,6 @@ export default function Home() {
   const [entries, setEntries] = useState(initialEntries);
   const [organizationId, setOrganizationId] = useState("");
   const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([]);
-  const [organizationName, setOrganizationName] = useState("Cargando empresa...");
   const [loadingData, setLoadingData] = useState(true);
   const [modal, setModal] = useState<"Ingreso" | "Gasto" | "Venta" | null>(null);
   const [name, setName] = useState("");
@@ -49,17 +48,14 @@ export default function Home() {
         if (cancelled) return;
         setOrganizations(available);
         if (available.length === 0) {
-          setOrganizationName("Sin empresa");
           setEntries([]);
           notify("Tu cuenta aún no tiene una empresa. Completa el registro del negocio.");
           setLoadingData(false);
           return;
         }
         setOrganizationId(available[0].id);
-        setOrganizationName(available[0].name);
       } catch (error) {
         if (!cancelled) {
-          setOrganizationName("No disponible");
           notify(error instanceof Error ? error.message : "Error al cargar tus empresas.");
           setLoadingData(false);
         }
@@ -147,7 +143,7 @@ export default function Home() {
   return <div className="app-shell">
     <aside className={`sidebar ${mobileNav ? "open" : ""}`}>
       <div className="brand"><div className="brand-mark">V.</div><div className="brand-name">voz<span>admin</span></div></div>
-      <div className="workspace"><div className="workspace-avatar">N</div><div style={{minWidth:0,flex:1}}><small>EMPRESA ACTIVA</small><select aria-label="Cambiar empresa" value={organizationId} onChange={event => { const selected = organizations.find(item => item.id === event.target.value); setOrganizationId(event.target.value); if (selected) setOrganizationName(selected.name); }} style={{display:"block",width:"100%",maxWidth:170,background:"transparent",border:0,color:"#fff",fontWeight:600,outline:"none",fontSize:12}}>{organizations.map(item => <option key={item.id} value={item.id} style={{color:"#17251f"}}>{item.name}</option>)}</select></div><ChevronDown size={14} style={{marginLeft:"auto",color:"#a9b7b0"}}/></div>
+      <div className="workspace"><div className="workspace-avatar">N</div><div style={{minWidth:0,flex:1}}><small>EMPRESA ACTIVA</small><select aria-label="Cambiar empresa" value={organizationId} onChange={event => { setOrganizationId(event.target.value); }} style={{display:"block",width:"100%",maxWidth:170,background:"transparent",border:0,color:"#fff",fontWeight:600,outline:"none",fontSize:12}}>{organizations.map(item => <option key={item.id} value={item.id} style={{color:"#17251f"}}>{item.name}</option>)}</select></div><ChevronDown size={14} style={{marginLeft:"auto",color:"#a9b7b0"}}/></div>
       {navGroups.map(group => <div key={group.title}><p className="nav-label">{group.title}</p><div className="nav-list">{group.items.map(item => <button key={item.label} className={`nav-item ${active === item.label ? "active" : ""}`} onClick={() => {setActive(item.label);setMobileNav(false);}}><item.icon/><span>{item.label}</span></button>)}</div></div>)}
       <div className="nav-spacer"/><div className="sidebar-bottom"><div className="user-card"><div className="user-avatar">JV</div><div><strong>Administrador</strong><small>Espacio empresarial</small></div><Settings size={15} style={{marginLeft:"auto",color:"#9baaa2"}}/></div></div>
     </aside>
