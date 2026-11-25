@@ -17,20 +17,27 @@ export default function RegisterPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(""); setNotice(""); setLoading(true);
+    setError("");
+    setNotice("");
+    setLoading(true);
     try {
       const supabase = createClient();
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const emailRedirectTo = new URL("/auth/callback", siteUrl).toString();
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
-        options: { data: { full_name: fullName, business_name: businessName } }
+        options: {
+          data: { full_name: fullName.trim(), business_name: businessName.trim() },
+          emailRedirectTo,
+        },
       });
       if (signUpError) throw signUpError;
       if (data.session) {
         router.push("/");
         router.refresh();
       } else {
-        setNotice("Cuenta creada. Revisa tu correo para confirmar el registro. Tu espacio de negocio se prepara automáticamente; después inicia sesión.");
+        setNotice("Cuenta creada. Te enviamos un correo de confirmación. Abre el enlace para activar tu cuenta.");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible crear la cuenta.");
@@ -39,5 +46,25 @@ export default function RegisterPage() {
     }
   }
 
-  return <main className="auth-page"><section className="auth-card"><div className="auth-brand"><span>V.</span><strong>vozadmin</strong></div><p className="eyebrow">EMPIEZA A CRECER</p><h1>Tu negocio merece más.</h1><p className="auth-subtitle">Crea tu acceso y prepara tu espacio de trabajo.</p><form onSubmit={handleSubmit}><label>Tu nombre<input required value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Nombre completo"/></label><label>Nombre del negocio<input required minLength={2} value={businessName} onChange={e=>setBusinessName(e.target.value)} placeholder="Ej. Mi negocio"/></label><label>Correo electrónico<input type="email" autoComplete="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@negocio.com"/></label><label>Contraseña<input type="password" autoComplete="new-password" required minLength={8} value={password} onChange={e=>setPassword(e.target.value)} placeholder="Mínimo 8 caracteres"/></label>{error&&<p className="auth-error">{error}</p>}{notice&&<p className="auth-notice">{notice}</p>}<button className="primary-btn auth-submit" disabled={loading}>{loading?"Creando cuenta...":"Crear cuenta"}</button></form><p className="auth-footer">¿Ya tienes cuenta? <Link href="/login">Inicia sesión</Link></p><p className="auth-legal">Al continuar, tus datos de negocio quedarán aislados de los de otras empresas.</p></section></main>;
+  return (
+    <main className="auth-page">
+      <section className="auth-card">
+        <div className="auth-brand"><span>V.</span><strong>vozadmin</strong></div>
+        <p className="eyebrow">EMPIEZA A CRECER</p>
+        <h1>Tu negocio merece más.</h1>
+        <p className="auth-subtitle">Crea tu acceso y prepara tu espacio de trabajo.</p>
+        <form onSubmit={handleSubmit}>
+          <label>Tu nombre<input required value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Nombre completo" /></label>
+          <label>Nombre del negocio<input required minLength={2} value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="Ej. Mi negocio" /></label>
+          <label>Correo electrónico<input type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="tu@negocio.com" /></label>
+          <label>Contraseña<input type="password" autoComplete="new-password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" /></label>
+          {error && <p className="auth-error">{error}</p>}
+          {notice && <p className="auth-notice">{notice}</p>}
+          <button className="primary-btn auth-submit" disabled={loading}>{loading ? "Creando cuenta..." : "Crear cuenta"}</button>
+        </form>
+        <p className="auth-footer">¿Ya tienes cuenta? <Link href="/login">Inicia sesión</Link></p>
+        <p className="auth-legal">Al continuar, tus datos de negocio quedarán aislados de los de otras empresas.</p>
+      </section>
+    </main>
+  );
 }
