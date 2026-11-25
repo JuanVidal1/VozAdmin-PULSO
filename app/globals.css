@@ -32,3 +32,11 @@
 .auth-legal{border-top:1px solid #edf0ed;padding-top:17px;margin:22px 0 0;text-align:center;color:#9aa69f;font-size:10px;line-height:1.5}
 @media(max-width:520px){.auth-page{padding:18px 14px;align-items:center}.auth-card{padding:32px 24px 27px;border-radius:19px}.auth-brand{margin-bottom:31px}}
 
+/* Mobile navigation remains visible: this dashboard has no off-canvas toggle yet. */
+@media(max-width:760px){
+  .sidebar{position:relative;z-index:1;inset:auto;width:auto;transform:none;transition:none;box-shadow:none;padding:16px;gap:14px}
+  .sidebar .nav-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sidebar .nav-spacer,.sidebar-bottom{display:none}
+  .workspace{margin:0}
+  .main{padding:18px 15px 35px}
+}
