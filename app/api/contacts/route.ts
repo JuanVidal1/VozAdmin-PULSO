@@ -63,18 +63,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Los datos del contacto no son válidos." }, { status: 422 });
   }
 
-  const { data, error } = await supabase.from("contacts").insert({
-    organization_id: body.organization_id,
-    contact_type: body.contact_type,
-    name,
-    document_type: body.document_type?.trim() || null,
-    document_number: body.document_number?.trim() || null,
-    email: body.email?.trim().toLowerCase() || null,
-    phone: body.phone?.trim() || null,
-    address: body.address?.trim() || null,
-    notes: body.notes?.trim() || null
-  }).select("id, organization_id, contact_type, name, document_number, email, phone, address, created_at").single();
+  const { data, error } = await supabase.rpc("create_contact_with_audit", {
+    p_organization_id: body.organization_id,
+    p_contact_type: body.contact_type,
+    p_name: name,
+    p_document_type: body.document_type?.trim() || null,
+    p_document_number: body.document_number?.trim() || null,
+    p_email: body.email?.trim().toLowerCase() || null,
+    p_phone: body.phone?.trim() || null,
+    p_address: body.address?.trim() || null,
+    p_notes: body.notes?.trim() || null
+  });
 
-  if (error) return NextResponse.json({ error: "No fue posible guardar el contacto. Verifica tus permisos." }, { status: 403 });
+  if (error) {
+    const forbidden = error.code === "42501";
+    return NextResponse.json(
+      { error: forbidden ? "No tienes permisos para crear contactos en esta empresa." : "No fue posible guardar el contacto." },
+      { status: forbidden ? 403 : 400 }
+    );
+  }
   return NextResponse.json({ data }, { status: 201 });
 }
