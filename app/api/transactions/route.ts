@@ -15,6 +15,17 @@ type TransactionInput = {
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+function colombiaToday(): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 function validDate(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -89,7 +100,7 @@ export async function POST(request: Request) {
     p_description: body.description.trim(),
     p_amount: body.amount,
     p_payment_method: body.payment_method ?? null,
-    p_transaction_date: body.transaction_date ?? new Date().toISOString().slice(0, 10),
+    p_transaction_date: body.transaction_date ?? colombiaToday(),
     p_notes: body.notes?.trim() || null
   });
 
