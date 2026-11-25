@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Activity, ArrowDownRight, ArrowUpRight, Building2, Package, RefreshCw, Users, Wallet } from "lucide-react";
 
@@ -55,6 +55,8 @@ export default function ResumenPage() {
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
+  const [newOrganizationName, setNewOrganizationName] = useState("");
+  const [creatingOrganization, setCreatingOrganization] = useState(false);
 
   const organization = organizations.find(item => item.id === organizationId);
   const currency = organization?.currency_code || "COP";
@@ -110,6 +112,36 @@ export default function ResumenPage() {
     return () => { active = false; };
   }, [organizationId, reloadToken]);
 
+  async function handleCreateOrganization(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = newOrganizationName.trim();
+    if (name.length < 2) {
+      setError("El nombre de la empresa debe tener al menos 2 caracteres.");
+      return;
+    }
+    setCreatingOrganization(true);
+    setError("");
+    try {
+      const response = await fetch("/api/organizations", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, country_code: "CO", currency_code: "COP" })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || "No fue posible crear la empresa.");
+      const refreshed = await readApi<{ data: { role: string; organization: Organization }[] }>("/api/organizations");
+      const rows = (refreshed.data || []).flatMap(item => item.organization ? [{ ...item.organization, role: item.role }] : []);
+      setOrganizations(rows);
+      setOrganizationId(payload.data.id);
+      setNewOrganizationName("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No fue posible crear la empresa.");
+    } finally {
+      setCreatingOrganization(false);
+    }
+  }
+
   const totals = useMemo(() => transactions.reduce((result, item) => {
     const amount = Number(item.amount) || 0;
     if (item.transaction_type === "income") result.income += amount;
@@ -162,8 +194,11 @@ export default function ResumenPage() {
         {!loadingOrganizations && organizations.length === 0 && (
           <section className="panel" style={{ padding: 28 }}>
             <h2 className="panel-title">Todavía no tienes una empresa registrada</h2>
-            <p className="subtitle">Tu cuenta está activa, pero no encontramos una empresa asociada. Completa el registro de tu negocio para comenzar.</p>
-            <Link className="primary-btn" href="/registro">Registrar mi negocio</Link>
+            <p className="subtitle">Tu cuenta está activa, pero no encontramos una empresa asociada. Registra tu negocio para comenzar.</p>
+            <form onSubmit={handleCreateOrganization} style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }}>
+              <input aria-label="Nombre de la empresa" required minLength={2} maxLength={120} value={newOrganizationName} onChange={event => setNewOrganizationName(event.target.value)} placeholder="Nombre de tu negocio" style={{ flex: "1 1 240px", minHeight: 44, border: "1px solid #dfe7e1", borderRadius: 10, padding: "0 13px", fontSize: 13 }} />
+              <button className="primary-btn" type="submit" disabled={creatingOrganization}>{creatingOrganization ? "Creando..." : "Crear empresa"}</button>
+            </form>
           </section>
         )}
 
