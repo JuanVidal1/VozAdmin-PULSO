@@ -14,7 +14,7 @@ create unique index if not exists uq_purchases_organization_id_id
 create unique index if not exists uq_receivables_organization_id_id
   on public.receivables(organization_id, id);
 
-do $
+do $$
 begin
   if not exists (select 1 from pg_constraint where conname = 'transactions_contact_same_org_fkey') then
     alter table public.transactions
@@ -24,9 +24,9 @@ begin
       on delete set null (contact_id) not valid;
   end if;
 end;
-$;
+$$;
 
-do $
+do $$
 begin
   if not exists (select 1 from pg_constraint where conname = 'sales_customer_same_org_fkey') then
     alter table public.sales
