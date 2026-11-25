@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Activity, ArrowDownLeft, ArrowUpRight, Bell, Boxes, BriefcaseBusiness, CalendarDays, Check, ChevronDown, CircleDollarSign, ClipboardList, Command, CreditCard, FileText, LayoutDashboard, Menu, Mic, Package, Plus, Search, Send, Settings, ShoppingBag, Sparkles, TrendingUp, Users, Wallet, X } from "lucide-react";
 
 type Entry = { id: string; name: string; detail: string; amount: number; kind: "Ingreso" | "Gasto"; date: string };
@@ -13,6 +14,7 @@ const navGroups = [
 ];
 
 export default function Home() {
+  const router = useRouter();
   const [active, setActive] = useState("Resumen");
   const [entries, setEntries] = useState(initialEntries);
   const [organizationId, setOrganizationId] = useState("");
@@ -144,7 +146,7 @@ export default function Home() {
     <aside className={`sidebar ${mobileNav ? "open" : ""}`}>
       <div className="brand"><div className="brand-mark">V.</div><div className="brand-name">voz<span>admin</span></div></div>
       <div className="workspace"><div className="workspace-avatar">N</div><div style={{minWidth:0,flex:1}}><small>EMPRESA ACTIVA</small><select aria-label="Cambiar empresa" value={organizationId} onChange={event => { setOrganizationId(event.target.value); }} style={{display:"block",width:"100%",maxWidth:170,background:"transparent",border:0,color:"#fff",fontWeight:600,outline:"none",fontSize:12}}>{organizations.map(item => <option key={item.id} value={item.id} style={{color:"#17251f"}}>{item.name}</option>)}</select></div><ChevronDown size={14} style={{marginLeft:"auto",color:"#a9b7b0"}}/></div>
-      {navGroups.map(group => <div key={group.title}><p className="nav-label">{group.title}</p><div className="nav-list">{group.items.map(item => <button key={item.label} className={`nav-item ${active === item.label ? "active" : ""}`} onClick={() => {setActive(item.label);setMobileNav(false);}}><item.icon/><span>{item.label}</span></button>)}</div></div>)}
+      {navGroups.map(group => <div key={group.title}><p className="nav-label">{group.title}</p><div className="nav-list">{group.items.map(item => <button key={item.label} className={`nav-item ${active === item.label ? "active" : ""}`} onClick={() => {setActive(item.label);setMobileNav(false);if(item.label==="Clientes")router.push("/clientes");else if(item.label==="Inventario")router.push("/inventario");else if(item.label==="Resumen")router.push("/");}}><item.icon/><span>{item.label}</span></button>)}</div></div>)}
       <div className="nav-spacer"/><div className="sidebar-bottom"><div className="user-card"><div className="user-avatar">JV</div><div><strong>Administrador</strong><small>Espacio empresarial</small></div><Settings size={15} style={{marginLeft:"auto",color:"#9baaa2"}}/></div></div>
     </aside>
     <main className="main">
