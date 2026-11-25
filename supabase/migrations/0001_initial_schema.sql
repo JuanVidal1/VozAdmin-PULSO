@@ -46,6 +46,21 @@ as $$
   );
 $$;
 
+create or replace function public.is_organization_admin(target_organization uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $
+  select exists (
+    select 1 from public.organization_members m
+    where m.organization_id = target_organization
+      and m.user_id = (select auth.uid())
+      and m.role in ('owner','admin')
+  );
+$;
+
 create or replace function public.add_organization_owner()
 returns trigger
 language plpgsql
@@ -162,11 +177,8 @@ create policy "Members can read memberships" on public.organization_members
 for select to authenticated using (public.is_organization_member(organization_id));
 drop policy if exists "Owners and admins can manage memberships" on public.organization_members;
 create policy "Owners and admins can manage memberships" on public.organization_members
-for all to authenticated using (
-  exists (select 1 from public.organization_members m where m.organization_id = organization_id and m.user_id = (select auth.uid()) and m.role in ('owner','admin'))
-) with check (
-  exists (select 1 from public.organization_members m where m.organization_id = organization_id and m.user_id = (select auth.uid()) and m.role in ('owner','admin'))
-);
+for all to authenticated using (public.is_organization_admin(organization_id))
+with check (public.is_organization_admin(organization_id));
 
 drop policy if exists "Members can manage contacts" on public.contacts;
 create policy "Members can manage contacts" on public.contacts
@@ -207,6 +219,11 @@ begin
   insert into public.profiles (id, full_name)
   values (new.id, nullif(new.raw_user_meta_data ->> 'full_name', ''))
   on conflict (id) do nothing;
+
+  if nullif(trim(new.raw_user_meta_data ->> 'business_name'), '') is not null then
+    insert into public.organizations (name, created_by)
+    values (trim(new.raw_user_meta_data ->> 'business_name'), new.id);
+  end if;
   return new;
 end;
 $$;
