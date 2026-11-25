@@ -102,3 +102,7 @@ El panel principal consulta la empresa y sus movimientos reales desde estas ruta
 ### Integridad referencial multiempresa (migración 0004)
 
 Ejecuta también `supabase/migrations/0004_tenant_integrity.sql` después de 0003. Añade claves foráneas compuestas para impedir que ventas, compras, inventario y cartera relacionen registros de empresas distintas; incorpora triggers uniformes para `updated_at`. Las restricciones nuevas se crean inicialmente como `NOT VALID`: protegen las escrituras nuevas y permiten auditar datos históricos antes de validar todo el conjunto.
+
+### Alta auditada de clientes, proveedores y productos (migración 0005)
+
+Ejecuta `supabase/migrations/0005_audited_master_data.sql` después de 0004. La creación de contactos ahora guarda su evento de auditoría en la misma transacción. La creación de productos registra también el saldo inicial como movimiento de inventario; si falla la auditoría o el movimiento, no queda un producto parcialmente creado.
