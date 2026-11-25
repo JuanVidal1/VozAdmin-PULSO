@@ -69,7 +69,7 @@ export default function Workspace({section}:{section:Section}) {
  async function save(){
   if(!organizationId){notify("Primero crea o selecciona una empresa.");return}
   try{
-   let endpoint="";let body:Record<string,unknown>={organization_id:organizationId};
+   let endpoint="";let body:SavePayload={organization_id:organizationId};
    if(modal==="transaction"){const amount=Number(form.amount.replace(/[^0-9]/g,""));if(!form.name.trim()||amount<=0)throw new Error("Completa el concepto y un valor mayor que cero.");endpoint="/api/transactions";body={...body,transaction_type:section==="gastos"||section==="compras"?"expense":form.kind as "income"|"expense",category:section==="compras"?"compra":section==="ventas"?"venta":section==="gastos"?"gasto":"general",description:form.name.trim(),amount,notes:form.detail.trim()||null}}
    if(modal==="product"){const price=Number(form.price||0),cost=Number(form.cost||0),stock=Number(form.stock||0);if(!form.name.trim())throw new Error("Escribe el nombre del producto.");endpoint="/api/products";body={...body,name:form.name.trim(),sale_price:price,cost_price:cost,stock_quantity:stock,description:form.detail.trim()||null}}
    if(modal==="contact"){if(!form.name.trim())throw new Error("Escribe el nombre del contacto.");endpoint="/api/contacts";body={...body,name:form.name.trim(),contact_type:section==="proveedores"?"supplier":"customer",phone:form.phone.trim()||null,email:form.email.trim()||null}}
