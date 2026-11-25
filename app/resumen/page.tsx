@@ -54,6 +54,7 @@ export default function ResumenPage() {
   const [loadingOrganizations, setLoadingOrganizations] = useState(true);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
 
   const organization = organizations.find(item => item.id === organizationId);
   const currency = organization?.currency_code || "COP";
@@ -107,7 +108,7 @@ export default function ResumenPage() {
     }
     void loadDashboard();
     return () => { active = false; };
-  }, [organizationId]);
+  }, [organizationId, reloadToken]);
 
   const totals = useMemo(() => transactions.reduce((result, item) => {
     const amount = Number(item.amount) || 0;
@@ -148,7 +149,7 @@ export default function ResumenPage() {
               {organizations.length === 0 && <option value="">{loadingOrganizations ? "Cargando empresas..." : "Sin empresas"}</option>}
               {organizations.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
-            <button className="icon-btn" type="button" title="Actualizar datos" onClick={() => setOrganizationId(current => current)}><RefreshCw size={17}/></button>
+            <button className="icon-btn" type="button" title="Actualizar datos" onClick={() => setReloadToken(current => current + 1)}><RefreshCw size={17}/></button>
           </div>
         </header>
 
