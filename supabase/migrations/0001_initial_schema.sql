@@ -52,7 +52,7 @@ language sql
 stable
 security definer
 set search_path = public
-as $
+as $$
   select exists (
     select 1 from public.organization_members m
     where m.organization_id = target_organization
