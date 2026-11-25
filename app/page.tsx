@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, ArrowDownLeft, ArrowUpRight, Bell, Boxes, BriefcaseBusiness, CalendarDays, Check, ChevronDown, CircleDollarSign, ClipboardList, Clock3, Command, CreditCard, FileText, Headphones, LayoutDashboard, Menu, Mic, Package, Plus, Search, Send, Settings, ShoppingBag, Sparkles, TrendingUp, Users, Wallet, X } from "lucide-react";
+import { Activity, ArrowDownLeft, ArrowUpRight, Bell, Boxes, BriefcaseBusiness, CalendarDays, Check, ChevronDown, CircleDollarSign, ClipboardList, Command, CreditCard, FileText, LayoutDashboard, Menu, Mic, Package, Plus, Search, Send, Settings, ShoppingBag, Sparkles, TrendingUp, Users, Wallet, X } from "lucide-react";
 
 type Entry = { id: string; name: string; detail: string; amount: number; kind: "Ingreso" | "Gasto"; date: string };
 const initialEntries: Entry[] = [];
