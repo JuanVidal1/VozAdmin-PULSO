@@ -22,6 +22,8 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm install
+      - name: Lint source code
+        run: npm run lint
       - name: Audit dependencies
         run: npm audit
       - name: Build application
