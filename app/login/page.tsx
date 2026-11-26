@@ -51,7 +51,7 @@ export default function LoginPage() {
       const supabase = createClient();
       const requestedPath = new URLSearchParams(window.location.search).get("next");
       const destination = requestedPath && requestedPath.startsWith("/") && !requestedPath.startsWith("//") ? requestedPath : "/resumen";
-      const redirectTo = new URL(`/auth/callback?next=${encodeURIComponent(destination)}`, window.location.origin).toString();
+      const redirectTo = new URL(`/auth/callback?next=${encodeURIComponent(destination)}`, "https://turbo-parakeet-x5v5qjvx4jqgf6x64-3000.app.github.dev").toString();
       const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
       if (oauthError) throw oauthError;
     } catch (err) {
