@@ -40,3 +40,10 @@
   .workspace{margin:0}
   .main{padding:18px 15px 35px}
 }
+
+/* Google OAuth buttons */
+.google-auth-btn{width:100%;height:47px;display:flex;align-items:center;justify-content:center;gap:11px;border:1px solid #dfe7e1;border-radius:11px;background:#fff;color:#25352e;font-size:12px;font-weight:700;cursor:pointer;transition:background .18s,border-color .18s,box-shadow .18s}
+.google-auth-btn:hover{background:#fbfcfb;border-color:#bdcec2;box-shadow:0 3px 12px rgba(24,48,39,.06)}
+.google-auth-btn:disabled{opacity:.65;cursor:wait}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#9aa69f;font-size:10px}
+.auth-divider:before,.auth-divider:after{content:"";height:1px;flex:1;background:#edf0ed}
