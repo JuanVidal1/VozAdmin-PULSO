@@ -26,7 +26,7 @@ export default function RegisterPage() {
     setGoogleLoading(true);
     try {
       const supabase = createClient();
-      const redirectTo = new URL("/auth/callback?next=%2Fresumen", window.location.origin).toString();
+      const redirectTo = "https://turbo-parakeet-x5v5qjvx4jqgf6x64-3000.app.github.dev/auth/callback?next=%2Fresumen";
       const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
       if (oauthError) throw oauthError;
     } catch (err) {
@@ -44,7 +44,7 @@ export default function RegisterPage() {
       const supabase = createClient();
       // Use the exact host where the registration page is running. Codespaces
       // assigns a host per forwarded port, so a saved env URL can become stale.
-      const emailRedirectTo = new URL("/auth/callback?next=%2Fresumen", window.location.origin).toString();
+      const emailRedirectTo = "https://turbo-parakeet-x5v5qjvx4jqgf6x64-3000.app.github.dev/auth/callback?next=%2Fresumen";
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
