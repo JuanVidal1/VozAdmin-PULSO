@@ -57,6 +57,7 @@ export default function ResumenPage() {
   const [reloadToken, setReloadToken] = useState(0);
   const [newOrganizationName, setNewOrganizationName] = useState("");
   const [creatingOrganization, setCreatingOrganization] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "error">("checking");
 
   const organization = organizations.find(item => item.id === organizationId);
   const currency = organization?.currency_code || "COP";
@@ -69,9 +70,14 @@ export default function ResumenPage() {
         if (!active) return;
         const rows = (result.data || []).flatMap(item => item.organization ? [{ ...item.organization, role: item.role }] : []);
         setOrganizations(rows);
+        setConnectionStatus("connected");
+        setError("");
         if (rows.length) setOrganizationId(current => current || rows[0].id);
       } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : "No fue posible consultar tus empresas.");
+        if (active) {
+          setConnectionStatus("error");
+          setError(cause instanceof Error ? cause.message : "No fue posible consultar tus empresas.");
+        }
       } finally {
         if (active) setLoadingOrganizations(false);
       }
@@ -90,6 +96,7 @@ export default function ResumenPage() {
     let active = true;
     async function loadDashboard() {
       setLoadingData(true);
+      setConnectionStatus("checking");
       setError("");
       const query = `?organization_id=${encodeURIComponent(organizationId)}`;
       try {
@@ -102,8 +109,12 @@ export default function ResumenPage() {
         setTransactions(movementResult.data || []);
         setProducts(productResult.data || []);
         setContacts(contactResult.data || []);
+        setConnectionStatus("connected");
       } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : "No fue posible cargar el resumen.");
+        if (active) {
+          setConnectionStatus("error");
+          setError(cause instanceof Error ? cause.message : "No fue posible cargar el resumen.");
+        }
       } finally {
         if (active) setLoadingData(false);
       }
@@ -151,6 +162,8 @@ export default function ResumenPage() {
 
   const lowStock = products.filter(product => Number(product.stock_quantity) <= Number(product.minimum_stock)).length;
   const recent = transactions.slice(0, 7);
+  const connectionLabel = connectionStatus === "checking" ? "Verificando conexión" : connectionStatus === "error" ? "Revisar conexión" : "Supabase conectado";
+  const connectionClass = connectionStatus === "error" ? "status pending" : connectionStatus === "connected" ? "status" : "legend";
 
   return (
     <div className="app-shell">
@@ -164,9 +177,9 @@ export default function ResumenPage() {
           <p className="nav-label">OPERACIÓN</p>
           <nav className="nav-list">
             <Link className="nav-item active" href="/resumen"><Activity size={17}/>Resumen</Link>
-            <span className="nav-item" aria-disabled="true"><Wallet size={17}/>Ventas y gastos</span>
-            <span className="nav-item" aria-disabled="true"><Package size={17}/>Inventario</span>
-            <span className="nav-item" aria-disabled="true"><Users size={17}/>Clientes y proveedores</span>
+            <span className="nav-item" aria-disabled="true" title="Módulo en desarrollo"><Wallet size={17}/>Ventas y gastos <small style={{ marginLeft: "auto", fontSize: 9, opacity: .65 }}>Pronto</small></span>
+            <span className="nav-item" aria-disabled="true" title="Módulo en desarrollo"><Package size={17}/>Inventario <small style={{ marginLeft: "auto", fontSize: 9, opacity: .65 }}>Pronto</small></span>
+            <span className="nav-item" aria-disabled="true" title="Módulo en desarrollo"><Users size={17}/>Clientes y proveedores <small style={{ marginLeft: "auto", fontSize: 9, opacity: .65 }}>Pronto</small></span>
           </nav>
         </div>
         <div className="nav-spacer"/>
@@ -203,8 +216,8 @@ export default function ResumenPage() {
         )}
 
         <section className="stats-grid">
-          <article className="stat-card"><div className="stat-top"><span>Ingresos registrados</span><span className="stat-icon"><ArrowUpRight size={16}/></span></div><p className="stat-value">{loadingData ? "…" : formatMoney(totals.income, currency)}</p><p className="stat-foot">Movimientos guardados</p></article>
-          <article className="stat-card"><div className="stat-top"><span>Gastos registrados</span><span className="stat-icon"><ArrowDownRight size={16}/></span></div><p className="stat-value">{loadingData ? "…" : formatMoney(totals.expenses, currency)}</p><p className="stat-foot">Movimientos guardados</p></article>
+          <article className="stat-card"><div className="stat-top"><span>Ingresos registrados</span><span className="stat-icon"><ArrowUpRight size={16}/></span></div><p className="stat-value">{loadingData ? "…" : formatMoney(totals.income, currency)}</p><p className="stat-foot">Cálculo sobre los últimos 100 movimientos consultados</p></article>
+          <article className="stat-card"><div className="stat-top"><span>Gastos registrados</span><span className="stat-icon"><ArrowDownRight size={16}/></span></div><p className="stat-value">{loadingData ? "…" : formatMoney(totals.expenses, currency)}</p><p className="stat-foot">Cálculo sobre los últimos 100 movimientos consultados</p></article>
           <article className="stat-card"><div className="stat-top"><span>Productos activos</span><span className="stat-icon"><Package size={16}/></span></div><p className="stat-value">{loadingData ? "…" : products.length.toLocaleString("es-CO")}</p><p className="stat-foot">{lowStock} con existencias en nivel mínimo</p></article>
           <article className="stat-card"><div className="stat-top"><span>Contactos</span><span className="stat-icon"><Users size={16}/></span></div><p className="stat-value">{loadingData ? "…" : contacts.length.toLocaleString("es-CO")}</p><p className="stat-foot">Clientes y proveedores</p></article>
         </section>
@@ -219,12 +232,13 @@ export default function ResumenPage() {
             )}
           </article>
           <article className="panel">
-            <div className="panel-head"><div><h2 className="panel-title">Estado del sistema</h2><p className="panel-note">Conexiones y datos disponibles</p></div><span className="status">En línea</span></div>
+            <div className="panel-head"><div><h2 className="panel-title">Conexión de datos</h2><p className="panel-note">Estado de las consultas realizadas por este panel</p></div><span className={connectionClass}>{connectionLabel}</span></div>
             <div className="activity">
               <div className="activity-item"><span className="activity-icon"><Building2 size={14}/></span><div><strong>Empresa</strong><p>{organization?.name || "No hay empresa seleccionada"}</p></div></div>
-              <div className="activity-item"><span className="activity-icon"><Wallet size={14}/></span><div><strong>Base financiera</strong><p>{transactions.length} movimientos consultados desde Supabase.</p></div></div>
+              <div className="activity-item"><span className="activity-icon"><Wallet size={14}/></span><div><strong>Movimientos financieros</strong><p>{transactions.length} registros consultados. La API limita esta vista a los últimos 100.</p></div></div>
               <div className="activity-item"><span className="activity-icon"><Package size={14}/></span><div><strong>Inventario</strong><p>{products.length} productos activos disponibles.</p></div></div>
-              <div className="activity-item"><span className="activity-icon"><Users size={14}/></span><div><strong>Contactos</strong><p>{contacts.length} registros de clientes y proveedores.</p></div></div>
+              <div className="activity-item"><span className="activity-icon"><Users size={14}/></span><div><strong>Contactos</strong><p>{contacts.length} registros consultados desde Supabase.</p></div></div>
+              <div className="activity-item"><span className="activity-icon"><Activity size={14}/></span><div><strong>Estado de conexión</strong><p>{connectionLabel}. Este indicador no representa todavía las integraciones futuras de IA, voz o pagos.</p></div></div>
             </div>
           </article>
         </section>
