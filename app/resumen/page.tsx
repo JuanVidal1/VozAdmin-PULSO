@@ -98,6 +98,9 @@ export default function ResumenPage() {
       setLoadingData(true);
       setConnectionStatus("checking");
       setError("");
+      setTransactions([]);
+      setProducts([]);
+      setContacts([]);
       const query = `?organization_id=${encodeURIComponent(organizationId)}`;
       try {
         const [movementResult, productResult, contactResult] = await Promise.all([
