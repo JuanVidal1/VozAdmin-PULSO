@@ -24,11 +24,17 @@ const styles: Record<string, React.CSSProperties> = {
   label: { display: "grid", gap: 8, color: "#43564d", fontSize: 12, fontWeight: 700 },
   input: { width: "100%", height: 48, boxSizing: "border-box", padding: "0 14px", border: "1px solid #dfe7e1", borderRadius: 11, background: "#fbfcfb", color: "#142522", fontSize: 14, outline: "none" },
   button: { width: "100%", height: 49, marginTop: 3, border: 0, borderRadius: 11, background: "#1d6655", color: "#fff", fontSize: 13, fontWeight: 800, cursor: "pointer", boxShadow: "0 8px 18px rgba(29,102,85,.2)" },
+  googleButton: { width: "100%", height: 47, display: "flex", alignItems: "center", justifyContent: "center", gap: 11, border: "1px solid #dfe7e1", borderRadius: 11, background: "#fff", color: "#25352e", fontSize: 12, fontWeight: 700, cursor: "pointer" },
+  separator: { display: "flex", alignItems: "center", gap: 12, margin: "18px 0", color: "#9aa69f", fontSize: 10 },
   error: { margin: 0, padding: "11px 13px", borderRadius: 10, background: "#fff0ee", color: "#a33c32", border: "1px solid #f5d6d1", fontSize: 12, lineHeight: 1.5 },
   footer: { margin: "24px 0 0", textAlign: "center", color: "#74827d", fontSize: 12 },
   link: { color: "#1d6655", fontWeight: 800, textDecoration: "none" },
   legal: { margin: "23px 0 0", paddingTop: 17, borderTop: "1px solid #edf0ed", textAlign: "center", color: "#9aa69f", fontSize: 10, lineHeight: 1.6 }
 };
+
+function GoogleMark() {
+  return <svg aria-hidden="true" width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.9c-.58 2.96-2.25 5.48-4.73 7.18l7.62 5.9c4.45-4.1 7.19-10.15 7.19-17.55Z"/><path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.9-5.9l-7.62-5.9c-2.12 1.42-4.84 2.27-8.28 2.27-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/></svg>;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,6 +42,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  async function handleGoogleSignIn() {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      const supabase = createClient();
+      const requestedPath = new URLSearchParams(window.location.search).get("next");
+      const destination = requestedPath && requestedPath.startsWith("/") && !requestedPath.startsWith("//") ? requestedPath : "/resumen";
+      const redirectTo = new URL(`/auth/callback?next=${encodeURIComponent(destination)}`, window.location.origin).toString();
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
+      if (oauthError) throw oauthError;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible conectar con Google.");
+      setGoogleLoading(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -69,6 +92,10 @@ export default function LoginPage() {
         <p style={styles.eyebrow}>TU NEGOCIO, EN CONTROL</p>
         <h1 style={styles.heading}>Qué bueno verte.</h1>
         <p style={styles.subtitle}>Ingresa para continuar a tu espacio de trabajo.</p>
+        <button type="button" onClick={handleGoogleSignIn} disabled={googleLoading || loading} style={{ ...styles.googleButton, opacity: googleLoading ? .7 : 1 }}>
+          <GoogleMark /> {googleLoading ? "Conectando con Google..." : "Continuar con Google"}
+        </button>
+        <div style={styles.separator}><span>o continúa con tu correo</span></div>
         <form onSubmit={handleSubmit} style={styles.form}>
           <label style={styles.label}>
             Correo electrónico
