@@ -22,8 +22,9 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      const emailRedirectTo = new URL("/auth/callback", siteUrl).toString();
+      // Use the exact host where the registration page is running. Codespaces
+      // assigns a host per forwarded port, so a saved env URL can become stale.
+      const emailRedirectTo = new URL("/auth/callback?next=%2Fresumen", window.location.origin).toString();
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -34,7 +35,7 @@ export default function RegisterPage() {
       });
       if (signUpError) throw signUpError;
       if (data.session) {
-        router.push("/");
+        router.push("/resumen");
         router.refresh();
       } else {
         setNotice("Cuenta creada. Te enviamos un correo de confirmación. Abre el enlace para activar tu cuenta.");
